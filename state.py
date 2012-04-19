@@ -249,7 +249,8 @@ class Guy(object):
         pass
 
     def check_loss(self, state):
-        if (self.posx >= 9.0 and self.posx <= 10.2 and self.posy <= 0.3) or (self.posx >= 10.2 and self.posy <= 10.8 and self.posy <= 0.8):
+        print 'posx = ' + str(self.posx) + 'posy = ' + str(self.posy)
+        if (self.posx >= 9.0 and self.posx <= 10.4 and self.posy <= 0.3 and self.posy>= 0.0) or (self.posx >= 10.4 and self.posx <= 10.8 and self.posy <= 0.8 and self.posy>= 0.0):
             self.height = 60
             self.stand()
             while self.height != 0:
@@ -258,7 +259,8 @@ class Guy(object):
                 self.height = self.height - 1 
                 self.posy = self.posy - 0.1
             state.loss = True
-        return True
+            return True
+        return False
         
 
     def handle_keypress(self, event, x, y, state):
@@ -269,16 +271,20 @@ class Guy(object):
             state.update()
             pygame.time.wait(80)
             self.stand()
+            if self.check_loss(state):
+            	return True
             state.update()
             pygame.time.wait(80)
             self.front_left()
         elif key == K_LEFT:
-            self.front_left()
+            self.stand()
         elif key == K_UP:
             self.jump()
             if self.height > 40:
                 while self.jump_state != 0:
                     self.fall()
+                    if self.check_loss(state):
+                    	return True
                     state.update()
                     pygame.time.wait(80)
                 self.stand()
@@ -286,21 +292,24 @@ class Guy(object):
             self.bend()
         #else:
         #    return False
-        self.check_loss(state)
-        return True
+        return self.check_loss(state)
 
     def handle_keyrelease(self, event, x, y, state):
         key = event.key
-        if key in [K_RIGHT, K_LEFT, K_DOWN]:
+        if key in [K_RIGHT, K_LEFT]:
             self.stand()
+        elif key == K_DOWN:
+            self.stand()
+            self.posy = 0.0 
         elif key == K_UP:
             while self.jump_state != 0:
                 self.fall()
+                if self.check_loss(state):
+                	return True
                 state.update()
                 pygame.time.wait(80)
             self.stand()
-        self.check_loss(state)
-        return True
+        return self.check_loss(state)
 
     def front_left(self):
         self.rotz = 0
@@ -354,10 +363,7 @@ class Guy(object):
         self.head = 0
 
     def bend(self):
-        if self.posy > -0.25:
-            self.posy = self.posy - 0.05
-        else:
-            self.posy = self.posy
+        self.posy = -0.25 
         self.rotz = -20
         self.left_shoulder = -50
         self.left_elbow = -90

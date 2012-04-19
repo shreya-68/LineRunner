@@ -21,7 +21,7 @@ class Guy(object):
         self.posy = 0
         self.posz = 0
         self.rotz = 0
-        self.left_shoulder = -90
+        self.left_shoulder = 0
         self.left_elbow = 0
         self.right_shoulder = 0
         self.right_elbow = 0
@@ -34,6 +34,8 @@ class Guy(object):
         self.head = 0
         self.jump_state = 0
         self.height = 0
+        self.boxperlevel = 0
+        self.level = 0
 
     def drawCube(self, size):
         size = size/2
@@ -76,7 +78,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef(0.5,4.0,0.5);
-        glColor3f(1.0,0.0,0.0)
+        glColor3f(0.91,0.67,0.91)
         self.drawCube(1.0);
         glPopMatrix();
 #************************************ 1----7 ******************
@@ -99,7 +101,7 @@ class Guy(object):
         
         glPushMatrix();
         glScalef (0.5,2.0,0.5);
-        glColor3f(1.0,0.0,1.0)
+        glColor3f(0.91,0.67,0.91)
         self.drawCube(1.0);
         glPopMatrix();
 
@@ -109,7 +111,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef (0.5, 2.0, 0.5);
-        glColor3f(0.0,1.0,0.0)
+        glColor3f(0.93,0.60,0.28)
         self.drawCube(1.0);
         glPopMatrix();
         glPopMatrix();
@@ -124,7 +126,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef (0.5,2.0,0.5);
-        glColor3f(0.0,1.0,1.0)
+        glColor3f(0.91,0.67,0.91)
         self.drawCube (1.0);
         glPopMatrix();
 
@@ -134,7 +136,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef (0.5,2.0,0.5);
-        glColor3f(0.0,0.0,1.0)
+        glColor3f(0.93,0.60,0.28)
         self.drawCube (1.0);
         glPopMatrix();
        
@@ -151,7 +153,7 @@ class Guy(object):
 #neck        
         glPushMatrix();
         glScalef (0.5, 1.0, 0.5);
-        glColor3f(1.0,0.0,1.0)
+        glColor3f(0.93,0.60,0.28)
         self.drawCube (1.0);
         glPopMatrix();
         
@@ -161,7 +163,7 @@ class Guy(object):
 #head
         glPushMatrix();
         glScalef (1.0, 1.0, 1.0);
-        glColor3f(0.0,1.0,1.0)
+        glColor3f(0.93,0.60,0.28)
         glutSolidSphere (1.0,100,100);
         glPopMatrix();
 
@@ -181,7 +183,7 @@ class Guy(object):
       
         glPushMatrix();
         glScalef(2.0,0.5,0.5);
-        glColor3f(0.2,0.2,0.2)
+        glColor3f(0.0,0.0,0.0)
         self.drawCube(1.0);
         glPopMatrix();
       # 10 _ 11  
@@ -193,7 +195,7 @@ class Guy(object):
         
         glPushMatrix();
         glScalef(0.5,2.0,0.5);
-        glColor3f(0.5,0.5,0.5)
+        glColor3f(0.0,0.0,0.0)
         self.drawCube(1.0);
         glPopMatrix();
         
@@ -203,7 +205,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef(0.5,2.0,0.5);
-        glColor3f(0.2,0.2,0.0)
+        glColor3f(0.93,0.60,0.28)
         self.drawCube(1.0);
         glPopMatrix();
 
@@ -219,7 +221,7 @@ class Guy(object):
         
         glPushMatrix();
         glScalef(0.5,2.0,0.5);
-        glColor3f(0.0,0.5,0.5)
+        glColor3f(0.0,0.0,0.0)
         self.drawCube(1.0);
         glPopMatrix();
         
@@ -229,7 +231,7 @@ class Guy(object):
 
         glPushMatrix();
         glScalef(0.5,2.0,0.5);
-        glColor3f(0.5,0.5,0.0)
+        glColor3f(0.93,0.60,0.28)
         self.drawCube(1.0);
         glPopMatrix();
 #right leg ends
@@ -251,12 +253,12 @@ class Guy(object):
     def check_loss(self, state):
         print 'posx = ' + str(self.posx) + 'posy = ' + str(self.posy)
         if (self.posx >= 9.0 and self.posx <= 10.4 and self.posy <= 0.3 and self.posy>= 0.0) or (self.posx >= 10.4 and self.posx <= 10.8 and self.posy <= 0.8 and self.posy>= 0.0):
-            self.height = 60
+            height = 60
             self.stand()
-            while self.height != 0:
+            while height != 0:
                 state.update()
                 pygame.time.wait(80)
-                self.height = self.height - 1 
+                height = height - 1 
                 self.posy = self.posy - 0.1
             state.loss = True
             return True
@@ -280,7 +282,7 @@ class Guy(object):
             self.stand()
         elif key == K_UP:
             self.jump()
-            if self.height > 40:
+            if self.height > 30:
                 while self.jump_state != 0:
                     self.fall()
                     if self.check_loss(state):
@@ -313,7 +315,11 @@ class Guy(object):
 
     def front_left(self):
         self.rotz = 0
+        check = self.posx
         self.posx = (self.posx + 0.3)%20.4
+        if check < 10.8 and self.posx >= 10.8:
+        	self.boxperlevel = self.boxperlevel + 1
+        	self.level = self.level + int(self.boxperlevel/5)
         self.left_shoulder = -50
         self.left_elbow = -90
         self.right_shoulder = 50
@@ -328,7 +334,11 @@ class Guy(object):
 
     def front_right(self):
         self.rotz = 0
+        check = self.posx
         self.posx = (self.posx + 0.3)%20.4
+        if check < 10.8 and self.posx >= 10.8:
+        	self.boxperlevel = self.boxperlevel + 1
+        	self.level = self.level + int(self.boxperlevel/5)
         self.left_shoulder = 50
         self.left_elbow = -90
         self.right_shoulder = -50
@@ -348,7 +358,11 @@ class Guy(object):
             self.posy = self.posy + 0.1
             self.jump_state = self.jump_state + 1
         self.height = self.height + 1
+        check = self.posx
         self.posx = (self.posx + 0.3)%20.4
+        if check < 10.8 and self.posx >= 10.8:
+        	self.boxperlevel = self.boxperlevel + 1
+        	self.level = self.level + int(self.boxperlevel/5)
         self.rotz = -20
         self.left_shoulder = -110
         self.left_elbow = 0
@@ -380,10 +394,17 @@ class Guy(object):
 
     def fall(self):
         self.jump_state = self.jump_state - 1
-        self.height = 0
-        self.rotz = 20
-        self.posx = (self.posx + 0.3)%20.4
-        self.posy = self.posy - 0.1
+        self.height = self.height - 1 
+        self.rotz = 10
+        check = self.posx
+        self.posx = (self.posx + 0.1)%20.4
+        if check < 10.8 and self.posx >= 10.8:
+        	self.boxperlevel = self.boxperlevel + 1
+        	self.level = self.level + int(self.boxperlevel/5)
+        if self.posy > 0.1:
+            self.posy = self.posy - 0.1
+        else:
+        	self.posy = 0
         self.left_shoulder = -50
         self.left_elbow = -90
         self.right_shoulder = -50

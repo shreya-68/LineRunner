@@ -7,9 +7,9 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from bg import *
 
 VIEW_WIDTH, VIEW_HEIGHT = 900, 600
-from world import World
 
 class Camera(object):
     def __init__(self, start_pos):
@@ -29,15 +29,15 @@ class Camera(object):
                          0, #math.sin(math.radians(self.pitch)),
                          -math.cos(math.radians(self.angle+90)))
         if key == K_UP or key == K_w:
-        	self.pos = (self.pos[0] + facing[0], self.pos[1] + facing[1], self.pos[2] + facing[2])
+            self.pos = (self.pos[0] + facing[0], self.pos[1] + facing[1], self.pos[2] + facing[2])
         elif key == K_DOWN or key == K_s:
-        	self.pos = (self.pos[0] - facing[0], self.pos[1] - facing[1], self.pos[2] - facing[2])
+            self.pos = (self.pos[0] - facing[0], self.pos[1] - facing[1], self.pos[2] - facing[2])
         elif key == K_LEFT or key == K_a:
-        	self.pos = (self.pos[0] - facing_perp_x[0], self.pos[1] - facing_perp_x[1], self.pos[2] - facing_perp_x[2])
+            self.pos = (self.pos[0] - facing_perp_x[0], self.pos[1] - facing_perp_x[1], self.pos[2] - facing_perp_x[2])
         elif key == K_RIGHT or key == K_d:
-        	self.pos = (self.pos[0] + facing_perp_x[0], self.pos[1] + facing_perp_x[1], self.pos[2] + facing_perp_x[2])
+            self.pos = (self.pos[0] + facing_perp_x[0], self.pos[1] + facing_perp_x[1], self.pos[2] + facing_perp_x[2])
         else:
-        	return False
+            return False
 
         return True
 
@@ -57,11 +57,11 @@ class Camera(object):
             if d_y < 0:
                 self.pitch += 5
                 if self.pitch > 80:
-                	self.pitch = 80
+                    self.pitch = 80
             else:
                 self.pitch -= 5
                 if self.pitch < 0:
-                	self.pitch = 0
+                    self.pitch = 0
 
         self.angle %= (360 * (self.angle < 0 and -1 or 1))
         self.pitch %= (360 * (self.pitch < 0 and -1 or 1))
@@ -81,6 +81,7 @@ class Robot(object):
     state = property(lambda self: self.state_stack[-1])
     def __init__(self):
         self.state_stack = []
+        self.loss = False
 
         pygame.init()
         pygame.key.set_repeat(10, 100)
@@ -112,7 +113,7 @@ class Robot(object):
         self.time_curr = self.milliseconds()
         frame_time = self.time_curr - self.time_prev
         if frame_time > 25:
-        	frame_time = 25
+            frame_time = 25
         self.accumulator += frame_time
 
         if self.accumulator > 10:
@@ -161,7 +162,8 @@ class Robot(object):
         glLoadIdentity()
 
     def handle_keypress(self, event, x, y):
-        if self.state.handle_keypress(event, x, y, self): return
+        self.state.handle_keypress(event, x, y, self)
+        return
         if self.camera.handle_keypress(event, x, y): return
 
     def handle_keyrelease(self, event, x, y):
@@ -177,29 +179,37 @@ class Robot(object):
         # do any remaining handling here
 
     def run(self):
-        directory = os.path.expanduser(u'~')
-        if len(sys.argv) > 1:
-        	directory = os.path.abspath(sys.argv[1])
-
-        self.push_state(World(directory))
+        self.push_state(World())
         self.time_prev = self.time_curr = self.milliseconds()
         self.accumulator = 0
 
         while True:
             for event in pygame.event.get():
-            	mouse = pygame.mouse.get_pos()
+                mouse = pygame.mouse.get_pos()
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE): sys.exit(0)
                 elif event.type == KEYDOWN:
-                	self.handle_keypress(event, mouse[0], mouse[1])
+                    print event.type
+                    self.handle_keypress(event, mouse[0], mouse[1])
                 elif event.type == KEYUP:
                     self.handle_keyrelease(event, mouse[0], mouse[1])
-                elif event.type == MOUSEBUTTONDOWN:
-                    self.handle_mouse(event.button, event.type, event.pos[0], event.pos[1])
-                elif event.type == MOUSEMOTION:
-                    self.camera.handle_motion(event.pos[0], event.pos[1])
+                #elif event.type == MOUSEBUTTONDOWN:
+                #    self.handle_mouse(event.button, event.type, event.pos[0], event.pos[1])
+                #elif event.type == MOUSEMOTION:
+                #    self.camera.handle_motion(event.pos[0], event.pos[1])
 
             self.update()
             pygame.time.wait(10)
+            if self.loss == True:
+            	break;
+
+        while True:
+            for event in pygame.event.get():
+                mouse = pygame.mouse.get_pos()
+                if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                	sys.exit(0)
+            self.update()
+            pygame.time.wait(10)
+
 
 if __name__ == '__main__':
     f = Robot()

@@ -9,15 +9,19 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from collections import deque
 
+from main import Robot 
+from bg import *
+
 VIEW_WIDTH = 900
 VIEW_HEIGHT = 600
 
-class State(object):
+class Guy(object):
     def __init__(self):
         self.posx = 0
         self.posy = 0
         self.posz = 0
-        self.left_shoulder = 0
+        self.rotz = 0
+        self.left_shoulder = -90
         self.left_elbow = 0
         self.right_shoulder = 0
         self.right_elbow = 0
@@ -28,6 +32,8 @@ class State(object):
         self.hips = 0
         self.neck = 0
         self.head = 0
+        self.jump_state = 0
+        self.height = 0
 
     def drawCube(self, size):
         size = size/2
@@ -55,24 +61,17 @@ class State(object):
         glEnd()    
 
     def display(self):
-        print 'state display'
 
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(90, VIEW_WIDTH*1.0/VIEW_HEIGHT, 1.0, 15.0)
-
-        glClearDepth(1.0)
-        glDepthFunc(GL_LEQUAL)
-
-        glClear (GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         #glMatrixMode(GL_MODELVIEW)
         glColor3f (1.0, 1.0, 1.0)
-        gluLookAt(0.0,0.0,8.0,0.0,0.0,0.0,0.0,1.0,0.0)
+        #gluLookAt(0.0,0.0,8.0,0.0,0.0,0.0,0.0,1.0,0.0)
 
-        glTranslatef(self.posx, self.posy, self.posz)
-        glTranslatef(1, 1, 1)
-        glRotatef(70, 0.0,1.0,0.0)
-        glScalef(0.7,0.7,0.7);
+        glPushMatrix()
+        glTranslatef(0.0, self.posy, self.posz)
+        glTranslatef(0, 3, 0)
+        glRotatef(self.rotz, 0.0,0.0,1.0)
+        glRotatef(90, 0.0,1.0,0.0)
+        glScalef(0.5,0.5,0.5);
         #glPushMatrix()
 
         glPushMatrix();
@@ -238,7 +237,7 @@ class State(object):
 # 8_9 ends
        
         glPopMatrix();
-       # glPopMatrix();
+        glPopMatrix();
 #*********************************** 8 ---------- 12 ENDS **********************
         #glutSwapBuffers()
         #glMatrixMode(GL_PROJECTION)
@@ -246,25 +245,66 @@ class State(object):
         self.reshape(VIEW_WIDTH, VIEW_HEIGHT)
         #glFlush()
 
+    def reshape(self, x, y):
+        pass
 
-    def reshape(self, w, h):
-        print 'state.reshape'
+    def check_loss(self, state):
+        if (self.posx >= 9.0 and self.posx <= 10.2 and self.posy <= 0.3) or (self.posx >= 10.2 and self.posy <= 10.8 and self.posy <= 0.8):
+            self.height = 60
+            self.stand()
+            while self.height != 0:
+                state.update()
+                pygame.time.wait(80)
+                self.height = self.height - 1 
+                self.posy = self.posy - 0.1
+            state.loss = True
+        return True
+        
 
-        glViewport (0, 0, w, h) 
+    def handle_keypress(self, event, x, y, state):
+        key = event.key
+        if key == K_RIGHT:
+            #if self.jump_state == 0:
+            self.front_right()
+            state.update()
+            pygame.time.wait(80)
+            self.stand()
+            state.update()
+            pygame.time.wait(80)
+            self.front_left()
+        elif key == K_LEFT:
+            self.front_left()
+        elif key == K_UP:
+            self.jump()
+            if self.height > 40:
+                while self.jump_state != 0:
+                    self.fall()
+                    state.update()
+                    pygame.time.wait(80)
+                self.stand()
+        elif key == K_DOWN:
+            self.bend()
+        #else:
+        #    return False
+        self.check_loss(state)
+        return True
 
-        glMatrixMode (GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(90.0, w*1.0/h, 1.0, 15.0)
-
-        #glMatrixMode(GL_MODELVIEW)
-        #glLoadIdentity()
-        #glTranslatef (0.0, 0.0,0.0)
-       # 
-       ## gluLookAt(eyex,eyey,eyez,0.0,0.0,0.0,0.0,1.0,0.0)
-        gluLookAt(0.0,0.0,8.0,0.0,0.0,0.0,0.0,1.0,0.0)
+    def handle_keyrelease(self, event, x, y, state):
+        key = event.key
+        if key in [K_RIGHT, K_LEFT, K_DOWN]:
+            self.stand()
+        elif key == K_UP:
+            while self.jump_state != 0:
+                self.fall()
+                state.update()
+                pygame.time.wait(80)
+            self.stand()
+        self.check_loss(state)
+        return True
 
     def front_left(self):
-        self.posx = self.posx + 0.1
+        self.rotz = 0
+        self.posx = (self.posx + 0.3)%20.4
         self.left_shoulder = -50
         self.left_elbow = -90
         self.right_shoulder = 50
@@ -278,7 +318,8 @@ class State(object):
         self.head = 0
 
     def front_right(self):
-        self.posx = self.posx + 0.1
+        self.rotz = 0
+        self.posx = (self.posx + 0.3)%20.4
         self.left_shoulder = 50
         self.left_elbow = -90
         self.right_shoulder = -50
@@ -292,23 +333,50 @@ class State(object):
         self.head = 0
 
     def jump(self):
-        self.posy = self.posy + 0.1
-        self.left_shoulder = -50
-        self.left_elbow = -90
-        self.right_shoulder = -50
-        self.right_elbow = -90
-        self.left_waist = -30
-        self.left_knee = -20
-        self.right_waist = -30
-        self.right_knee = 20
+        if self.posy >= 3.0:
+            self.posy = self.posy
+        else:
+            self.posy = self.posy + 0.1
+            self.jump_state = self.jump_state + 1
+        self.height = self.height + 1
+        self.posx = (self.posx + 0.3)%20.4
+        self.rotz = -20
+        self.left_shoulder = -110
+        self.left_elbow = 0
+        self.right_shoulder = -110
+        self.right_elbow = 0
+        self.left_waist = 40
+        self.left_knee = 0
+        self.right_waist = 40
+        self.right_knee = 0
         self.hips = 0
         self.neck = 0
         self.head = 0
 
     def bend(self):
+        if self.posy > -0.25:
+            self.posy = self.posy - 0.05
+        else:
+            self.posy = self.posy
+        self.rotz = -20
+        self.left_shoulder = -50
+        self.left_elbow = -90
+        self.right_shoulder = -50
+        self.right_elbow = -90
+        self.left_waist = -40
+        self.left_knee = 50
+        self.right_waist = -40
+        self.right_knee = 50
+        self.hips = 0
+        self.neck = 0
+        self.head = 0
         pass
 
     def fall(self):
+        self.jump_state = self.jump_state - 1
+        self.height = 0
+        self.rotz = 20
+        self.posx = (self.posx + 0.3)%20.4
         self.posy = self.posy - 0.1
         self.left_shoulder = -50
         self.left_elbow = -90
@@ -323,6 +391,7 @@ class State(object):
         self.head = 0
 
     def stand(self):
+        self.rotz = 0
         self.left_shoulder = 0
         self.left_elbow = 0
         self.right_shoulder = 0

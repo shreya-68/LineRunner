@@ -9,6 +9,7 @@ import logging
 import sys
 
 from state import Guy
+from text import Text
 
 city_texture_inited = False
 
@@ -34,12 +35,17 @@ class World(object):
         self.first_run = True
 
         self.guy = Guy()
+        self.text = Text(25)
 
     def display(self):
         glClearColor(1, 1, 1, 1)
 
-        print self.guy.posx
         self.drawGround()
+        self.drawBar()
+        text = 'Level ' + str(self.guy.level)
+        self.text.display(text,7,8,25)
+        text = 'Cross ' + str(5 - self.guy.boxperlevel) + 'boxes to reach next level'
+        self.text.display(text,6,7,15)
 
         glPushMatrix()
         glTranslatef(-self.guy.posx, 0.0, 0.0)
@@ -66,6 +72,19 @@ class World(object):
     def handle_keyrelease(self, event, x, y, world):
         self.guy.handle_keyrelease(event, x, y, world)
         return
+
+    def drawBar(self):
+        glPushMatrix()
+        glColor3f(1, 0, 0)
+        glTranslatef(-8, 8, 0.0)
+        glScalef(1.5 - (self.guy.height*0.1)/2, 0.2, 0.2)
+        glBegin(GL_QUADS);
+        glVertex3f( 1.0, 1.0, 1.0)
+        glVertex3f(-1.0, 1.0, 1.0)
+        glVertex3f(-1.0,-1.0, 1.0)
+        glVertex3f( 1.0,-1.0, 1.0)
+        glEnd()    
+        glPopMatrix()
         
     def drawBox(self, box_place):
         glBindTexture(GL_TEXTURE_2D, textures[3])
@@ -192,7 +211,6 @@ def CreateTexture(imagename, number):
 def LoadTextures(number):
     global textures
     textures = glGenTextures(number)
-    print textures
     CreateTexture("ground.jpg", 0)
     CreateTexture("background.jpg", 1)
     CreateTexture("side.jpg", 2)
